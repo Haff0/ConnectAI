@@ -1,9 +1,10 @@
-﻿namespace Tool
+﻿using ConnectAI.Gemini;
+namespace Tool
 {
-    public class Program
-    {
-        public static async Task Main(string[] args)
-        {
-        }
-    }
+    //public class Program
+    //{
+    //    public static async Task Main(string[] args)
+    //    {
+    //    }
+    //}
 }

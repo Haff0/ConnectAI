@@ -1,18 +1,27 @@
 ﻿using System.Text;
 using System.Text.Json;
+using static ConnectAI.Enum;
 
 namespace ConnectAI.Gemini
 {
-
-    public class GeminiAiService
+    public interface IAIService
+    {
+        Task<AiGenerateResult> GenerateContentAsync(string prompt);
+        Task<AiStandardResponse<T>> GenerateRawAsync<T>(string prompt);
+    }
+    internal class GeminiAiService : IAIService
     {
         private readonly HttpClient _httpClient;
         private readonly string _apiKey;
+        private readonly string _model;
+        private readonly string _url;
 
-        public GeminiAiService( string apiKey)
+        public GeminiAiService( string apiKey, string? model = default)
         {
             _httpClient = new HttpClient();
-            _apiKey = apiKey; 
+            _apiKey = apiKey;
+            _model = model ?? "gemini-2.5-flash";
+            _url = "https://generativelanguage.googleapis.com/v1beta/models/";
         }
 
         public async Task<AiGenerateResult> GenerateContentAsync(string prompt)
@@ -35,7 +44,7 @@ namespace ConnectAI.Gemini
 
             var httpRequest = new HttpRequestMessage(
                 HttpMethod.Post,
-                "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent"
+                _url + _model + ":generateContent"
             );
 
             httpRequest.Headers.Add("x-goog-api-key", _apiKey);
@@ -51,7 +60,7 @@ namespace ConnectAI.Gemini
 
         public async Task<AiStandardResponse<T>> GenerateRawAsync<T>(string prompt)
         {
-            prompt = AiPromptBuilder.BuildPrompt<AiStandardResponse<T>>(prompt);
+            prompt = AiPromptBuilder.BuildPrompt<AiStandardResponse<T>>(prompt, AiPromptType.JsonWithConfidence);
 
             var request = new GeminiRequest
             {
@@ -71,7 +80,7 @@ namespace ConnectAI.Gemini
 
             var httpRequest = new HttpRequestMessage(
                 HttpMethod.Post,
-                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+                _url + _model + ":generateContent"
             );
 
             httpRequest.Headers.Add("x-goog-api-key", _apiKey);
@@ -87,6 +96,16 @@ namespace ConnectAI.Gemini
 
             return responseJson.ToAiGenerateResult().Text.Parse<T>();
         }
+
+        //Task<AiGenerateResult> IAIService.GenerateContentAsync(string prompt)
+        //{
+        //    return GenerateContentAsync(prompt);
+        //}
+
+        //Task<AiStandardResponse<T>> IAIService.GenerateRawAsync<T>(string prompt)
+        //{
+        //    return GenerateRawAsync<T>(prompt);
+        //}
     }
 
 }

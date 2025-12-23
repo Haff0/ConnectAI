@@ -1,5 +1,8 @@
-﻿using ConnectAI.Gemini;
+﻿using ConnectAI.AiPrompt;
+using ConnectAI.Gemini;
 using System.Text.Json;
+using static ConnectAI.AiPromptProfiles;
+using static ConnectAI.Enum;
 
 namespace ConnectAI
 {
@@ -104,23 +107,75 @@ namespace ConnectAI
         }
     }
 
+    public static class AiPromptProfiles
+    {
+        public class AiPromptProfile
+        {
+            public string SystemInstruction { get; init; } = "";
+            public string OutputRules { get; init; } = "";
+            public string UserPrefix { get; init; } = "User request:";
+        }
+        public static readonly AiPromptProfile JsonStrict = new()
+        {
+            SystemInstruction = "You must respond ONLY with valid JSON.",
+            OutputRules = """
+            Do not include explanations.
+            Do not use markdown.
+            The JSON MUST strictly follow this schema:
+            """
+        };
+
+        public static readonly AiPromptProfile JsonWithConfidence = new()
+        {
+            SystemInstruction = "Return structured AI analysis as JSON.",
+            OutputRules = """
+            - JSON only
+            - Include confidence score
+            - Follow schema strictly
+            """
+        };
+    }
+
     public static class AiPromptBuilder
     {
-        public static string BuildPrompt<T>(string userRequest)
+        internal static string BuildPrompt<T>(string userRequest)
         {
             var schema = AiSchemaGenerator.GenerateJsonSchema<T>();
 
             return $"""
-        You must respond ONLY with valid JSON.
-        Do not include explanations.
-        Do not use markdown.
-        The JSON MUST strictly follow this schema:
+            You must respond ONLY with valid JSON.
+            Do not include explanations.
+            Do not use markdown.
+            The JSON MUST strictly follow this schema:
 
-        {schema}
+            {schema}
 
-        User request:
-        {userRequest}
-        """;
+            User request:
+            {userRequest}
+            """;
+        }
+        internal static string BuildPrompt<T>( string userRequest, AiPromptProfile profile)
+        {
+            var schema = AiSchemaGenerator.GenerateJsonSchema<T>();
+
+            return $"""
+            {profile.SystemInstruction}
+
+            {profile.OutputRules}
+
+            {schema}
+
+            {profile.UserPrefix}
+            {userRequest}
+            """;
+        }
+
+        internal static string BuildPrompt<T>(
+            string userRequest,
+            AiPromptType promptType)
+        {
+            var strategy = AiPromptStrategyFactory.Create(promptType);
+            return strategy.BuildPrompt<T>(userRequest);
         }
     }
 

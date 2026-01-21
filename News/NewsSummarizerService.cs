@@ -1,5 +1,7 @@
 ﻿// Services/NewsSummarizerService.cs
+using ConnectAI;
 using ConnectAI.Gemini;
+using static ConnectAI.Enum;
 
 public interface INewsSummarizerService
 {
@@ -17,22 +19,12 @@ public class NewsSummarizerService : INewsSummarizerService
 
     public async Task<NewsInsight> SummarizeAsync(NewsArticle article)
     {
-        var prompt = $$$"""
-        You are an AI financial news analyst.
-        Summarize the following article and extract key crypto-related insights.
-
+        var userRequest = $$$"""
         Title: {{{article.Title}}}
         Content: {{{article.Content}}}
-
-        Output in JSON:
-        {{
-            "summary": "...",
-            "entities": ["BTC", "ETH", ...],
-            "sentiment": "positive|negative|neutral",
-            "impactAssets": ["BTC", "ETH"]
-        }}
         """;
 
+        var prompt = AiPromptBuilder.BuildPrompt<AiStandardResponse<NewsInsight>>(userRequest, AiPromptType.News);
         var res = await geminiAiService.GenerateRawAsync<NewsInsight>(prompt);
 
         return res.Data ?? new NewsInsight();

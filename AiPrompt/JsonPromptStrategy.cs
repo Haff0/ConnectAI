@@ -16,31 +16,9 @@ namespace ConnectAI.AiPrompt
                 AiPromptType.JsonWithConfidence => new JsonWithConfidencePromptStrategy(),
                 AiPromptType.Classifier => new ClassifierPromptStrategy(),
                 AiPromptType.FreeText => new FreeTextPromptStrategy(),
+                AiPromptType.News => new NewsCryptoPromptStrategy(),
                 _ => throw new NotSupportedException($"Prompt type '{type}' is not supported")
             };
-    }
-
-    public abstract class JsonSchemaPromptStrategyBase : IAiPromptStrategy
-    {
-        protected abstract string SystemInstruction { get; }
-        protected abstract string OutputRules { get; }
-
-        public virtual string BuildPrompt<T>(string userRequest)
-        {
-            var schema = AiSchemaGenerator.GenerateJsonSchema<T>();
-
-            return $"""
-                {SystemInstruction}
-
-                {OutputRules}
-
-                JSON Schema:
-                {schema}
-
-                User request:
-                {userRequest}
-            """;
-        }
     }
 
     internal sealed class JsonStrictPromptStrategy : JsonSchemaPromptStrategyBase
@@ -83,6 +61,26 @@ namespace ConnectAI.AiPrompt
         """;
     }
 
+    internal sealed class NewsAnalysisPromptStrategy : JsonSchemaPromptStrategyBase
+    {
+        protected override string SystemInstruction =>
+            """
+        You are an AI financial news analyst.
+        You analyze news articles related to crypto and financial markets.
+        Your task is to summarize content, extract key entities, 
+        evaluate sentiment, and identify impacted assets.
+        """;
+
+        protected override string OutputRules =>
+            """
+        - Respond ONLY with valid JSON
+        - Do not include explanations
+        - Do not include markdown
+        - Follow the provided JSON schema strictly
+        - Use concise and factual language
+        """;
+    }
+
     internal sealed class FreeTextPromptStrategy : IAiPromptStrategy
     {
         public string BuildPrompt<T>(string userRequest)
@@ -94,5 +92,46 @@ namespace ConnectAI.AiPrompt
         """;
         }
     }
+    public abstract class JsonSchemaPromptStrategyBase : IAiPromptStrategy
+    {
+        protected abstract string SystemInstruction { get; }
+        protected abstract string OutputRules { get; }
 
+        public virtual string BuildPrompt<T>(string userRequest)
+        {
+            var schema = AiSchemaGenerator.GenerateJsonSchema<T>();
+
+            return $"""
+                {SystemInstruction}
+
+                {OutputRules}
+
+                JSON Schema:
+                {schema}
+
+                User request:
+                {userRequest}
+            """;
+        }
+    }
+
+    public sealed class NewsCryptoPromptStrategy : JsonSchemaPromptStrategyBase
+    {
+        protected override string SystemInstruction =>
+        """
+        You are an AI financial news analyst.
+        You analyze news articles related to crypto and financial markets.
+        Your task is to summarize content, extract key entities, 
+        evaluate sentiment, and identify impacted assets.
+        """;
+
+        protected override string OutputRules =>
+        """
+        - Respond ONLY with valid JSON
+        - Do not include explanations
+        - Do not include markdown
+        - Follow the provided JSON schema strictly
+        - Use concise and factual language
+        """;
+    }
 }

@@ -13,7 +13,8 @@ namespace ConnectAI
             JsonStrict,             // Strict JSON output with schema
             JsonWithConfidence,     // JSON + confidence score
             FreeText,               // Normal text response
-            Classifier              // Classification / label output
+            Classifier,              // Classification / label output
+            News              
         }
     }
 }
